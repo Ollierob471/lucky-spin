@@ -1,0 +1,616 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1850">
+<meta name="description" content="Spin the wheel to pick a name.">
+<meta property="og:title" content="Lucky Spin">
+<meta property="og:description" content="Spin the wheel to pick a name.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23b8322a'/%3E%3Cpath d='M32 32L32 6A26 26 0 0 1 54.5 19z' fill='%23f2b632'/%3E%3Cpath d='M32 32L54.5 19A26 26 0 0 1 54.5 45z' fill='%232ea295'/%3E%3Cpath d='M32 32L54.5 45A26 26 0 0 1 32 58z' fill='%23f7efdc'/%3E%3Cpath d='M32 32L32 58A26 26 0 0 1 9.5 45z' fill='%233e5fe3'/%3E%3Cpath d='M32 32L9.5 45A26 26 0 0 1 9.5 19z' fill='%23ff8a3d'/%3E%3Cpath d='M32 32L9.5 19A26 26 0 0 1 32 6z' fill='%23e2463b'/%3E%3Ccircle cx='32' cy='32' r='6' fill='%23f2b632'/%3E%3C/svg%3E">
+<style>
+*,*::before,*::after{box-sizing:border-box}
+html{height:100%;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+<title>Lucky Spin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Rubik:wght@400;500;700&display=swap">
+<style>
+/* Layout: fairground stall — big lit wheel on the left, the names board on the right; stacks on phones. Single deliberate night-fair look. */
+:root {
+  --bg: #0f1850;
+  --panel: #18246a;
+  --line: #2a3a8f;
+  --ink: #f7efdc;
+  --muted: #a8b1e2;
+  --gold: #f2b632;
+  --red: #e2463b;
+  --teal: #2ea295;
+  --blue: #3e5fe3;
+  --orange: #ff8a3d;
+  --deep: #121c55;
+  --display: "Bungee", "Arial Black", Impact, sans-serif;
+  --body: "Rubik", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: dark;
+}
+html, body { background: var(--bg); color: var(--ink); }
+body {
+  font-family: var(--body);
+  font-size: 15px;
+  line-height: 1.5;
+  padding-block: 28px 40px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(62,95,227,.35), transparent 60%),
+    var(--bg);
+  min-height: 100%;
+}
+.wrap {
+  max-width: 1040px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 36px;
+  align-items: start;
+}
+@media (max-width: 820px) {
+  .wrap { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+}
+header { grid-column: 1 / -1; display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+h1 {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: clamp(30px, 6vw, 52px);
+  line-height: 1;
+  margin: 0;
+  color: var(--gold);
+  text-shadow: 0 3px 0 var(--red);
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  cursor: default;
+  text-wrap: balance;
+}
+.sub { color: var(--muted); margin: 0; font-size: 14px; }
+
+.stage { display: flex; flex-direction: column; align-items: center; gap: 20px; min-width: 0; }
+.wheel-box { width: 100%; max-width: 540px; aspect-ratio: 1; position: relative; }
+#wheel { width: 100%; height: 100%; display: block; cursor: pointer; touch-action: manipulation; }
+
+.spin-btn {
+  font-family: var(--display);
+  font-size: 24px;
+  letter-spacing: .04em;
+  color: var(--deep);
+  background: var(--gold);
+  border: 0;
+  border-radius: 999px;
+  padding: 14px 48px;
+  box-shadow: 0 5px 0 #b9821a, 0 10px 24px rgba(0,0,0,.35);
+  cursor: pointer;
+  transition: transform .08s, box-shadow .08s;
+}
+.spin-btn:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 #b9821a, 0 4px 12px rgba(0,0,0,.35); }
+.spin-btn:disabled { opacity: .55; cursor: default; }
+button:focus-visible, textarea:focus-visible, input:focus-visible { outline: 3px solid var(--orange); outline-offset: 2px; }
+
+.board {
+  background: var(--panel);
+  border: 2px solid var(--line);
+  border-radius: 14px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+.board h2 {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 16px;
+  letter-spacing: .06em;
+  margin: 0;
+  display: flex; justify-content: space-between; align-items: baseline;
+}
+.count { font-family: var(--body); font-size: 13px; color: var(--muted); letter-spacing: 0; font-variant-numeric: tabular-nums; }
+textarea {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 220px;
+  resize: vertical;
+  background: var(--deep);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font: 500 15px/1.6 var(--body);
+}
+.hint { margin: -6px 0 0; font-size: 12.5px; color: var(--muted); }
+.row { display: flex; gap: 8px; flex-wrap: wrap; }
+.ghost {
+  font: 500 13px var(--body);
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 7px 14px;
+  cursor: pointer;
+}
+.ghost:hover { border-color: var(--muted); }
+.history h3 { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; font-weight: 500; }
+.history ol { margin: 0; padding-left: 20px; font-size: 14px; display: grid; gap: 2px; }
+.history .empty { font-size: 13px; color: var(--muted); margin: 0; }
+
+/* overlays */
+.overlay {
+  position: fixed; inset: 0; z-index: 20;
+  background: rgba(6,10,40,.72);
+  display: grid; place-items: center;
+  padding: 20px max(16px, env(safe-area-inset-right, 0px)) 20px max(16px, env(safe-area-inset-left, 0px));
+}
+.card {
+  background: var(--panel);
+  border: 2px solid var(--line);
+  border-radius: 16px;
+  padding: 24px;
+  width: min(420px, 100%);
+  box-sizing: border-box;
+  display: flex; flex-direction: column; gap: 16px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.5);
+}
+.result .label { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 0; text-align: center; }
+.result .name {
+  font-family: var(--display); font-size: clamp(32px, 9vw, 54px); line-height: 1.05;
+  color: var(--gold); text-shadow: 0 3px 0 var(--red);
+  text-align: center; margin: 0; overflow-wrap: anywhere;
+}
+.result .row { justify-content: center; }
+.primary {
+  font: 700 14px var(--body); color: var(--deep); background: var(--gold);
+  border: 0; border-radius: 999px; padding: 9px 18px; cursor: pointer;
+}
+
+.rig h2 { font-family: var(--display); font-weight: 400; font-size: 18px; margin: 0; }
+.rig p { margin: 0; color: var(--muted); font-size: 13.5px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; max-height: 260px; overflow-y: auto; }
+.chip {
+  font: 500 15px var(--body); color: var(--ink);
+  background: var(--deep); border: 1px solid var(--line);
+  border-radius: 999px; padding: 8px 16px; min-height: 40px; cursor: pointer;
+  touch-action: manipulation;
+}
+.chip:active { background: var(--gold); color: var(--deep); }
+.rig .sect { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 0 0 -6px; }
+.queue { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 34vh; overflow-y: auto; }
+.queue li {
+  display: grid; grid-template-columns: 28px minmax(0, 1fr) 40px; align-items: center; gap: 8px;
+  background: var(--deep); border: 1px solid var(--line); border-radius: 10px; padding: 4px 4px 4px 10px;
+}
+.queue .n { font-family: var(--display); color: var(--gold); font-size: 15px; font-variant-numeric: tabular-nums; }
+.queue .nm { font-weight: 500; overflow-wrap: anywhere; }
+.queue .x {
+  width: 40px; height: 36px; border: 0; border-radius: 8px; background: transparent;
+  color: var(--muted); font-size: 20px; line-height: 1; cursor: pointer;
+}
+.queue .x:hover { color: var(--ink); }
+.queue-empty { margin: 0; font-size: 14px; color: var(--muted); background: var(--deep); border: 1px dashed var(--line); border-radius: 10px; padding: 10px 12px; }
+.check { display: flex; gap: 10px; align-items: center; font-size: 14px; }
+.check input { width: 20px; height: 20px; accent-color: var(--gold); flex: none; }
+.rig .row { justify-content: space-between; }
+@media (max-width: 520px) {
+  body { padding-block: 18px 32px; }
+  .card { padding: 20px 18px; }
+  .overlay { align-items: end; padding-bottom: max(16px, env(safe-area-inset-bottom, 0px)); }
+  .spin-btn { width: 100%; max-width: 360px; }
+  textarea { min-height: 170px; font-size: 16px; }
+}
+
+#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 30; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1 id="title">Lucky Spin</h1>
+    <p class="sub">Add names, hit spin, let fate decide.</p>
+  </header>
+
+  <section class="stage">
+    <div class="wheel-box"><canvas id="wheel" aria-label="Name wheel. Click to spin."></canvas></div>
+    <button class="spin-btn" id="spinBtn" type="button">Spin</button>
+  </section>
+
+  <aside class="board">
+    <h2>Names <span class="count" id="count"></span></h2>
+    <textarea id="names" spellcheck="false" aria-label="Names, one per line"></textarea>
+    <p class="hint">One name per line.</p>
+    <div class="row">
+      <button class="ghost" id="shuffle" type="button">Shuffle</button>
+      <button class="ghost" id="sort" type="button">Sort A–Z</button>
+      <button class="ghost" id="mute" type="button">Sound on</button>
+    </div>
+    <div class="history">
+      <h3>Recent winners</h3>
+      <p class="empty" id="histEmpty">No spins yet.</p>
+      <ol id="hist" hidden></ol>
+    </div>
+  </aside>
+</div>
+
+<div class="overlay" id="resultOv" hidden>
+  <div class="card result" role="dialog" aria-modal="true" aria-labelledby="winName">
+    <p class="label">The wheel has chosen</p>
+    <p class="name" id="winName"></p>
+    <div class="row">
+      <button class="primary" id="again" type="button">Spin again</button>
+      <button class="ghost" id="remove" type="button">Remove</button>
+      <button class="ghost" id="closeRes" type="button">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="rigOv" hidden>
+  <div class="card rig" role="dialog" aria-modal="true" aria-labelledby="rigTitle">
+    <h2 id="rigTitle">Landing order</h2>
+    <p>Tap names in the order you want them to come up. Once the list runs out, spins go back to random.</p>
+    <p class="sect">Up next</p>
+    <ol class="queue" id="queue"></ol>
+    <p class="queue-empty" id="queueEmpty">Nothing set. Spins are random.</p>
+    <p class="sect">Tap to add</p>
+    <div class="chips" id="chips"></div>
+    <label class="check"><input type="checkbox" id="loop"> Repeat this order when it runs out</label>
+    <div class="row">
+      <button class="ghost" id="rigClear" type="button">Clear order</button>
+      <button class="primary" id="rigDone" type="button">Done</button>
+    </div>
+  </div>
+</div>
+
+<canvas id="confetti" hidden></canvas>
+
+<script>
+(() => {
+  const TAU = Math.PI * 2;
+  const SAMPLE = ["Alex", "Sam", "Priya", "Jordan", "Megan", "Tom"];
+  const SEGS = [
+    { bg: "#e2463b", fg: "#f7efdc" },
+    { bg: "#f2b632", fg: "#121c55" },
+    { bg: "#2ea295", fg: "#f7efdc" },
+    { bg: "#f7efdc", fg: "#121c55" },
+    { bg: "#3e5fe3", fg: "#f7efdc" },
+    { bg: "#ff8a3d", fg: "#121c55" }
+  ];
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const $ = id => document.getElementById(id);
+  const canvas = $("wheel"), ctx = canvas.getContext("2d");
+  const ta = $("names");
+
+  let names = [];
+  let rot = 0, spinning = false, kick = 0;
+  let queue = [], loopQueue = false;
+  try {
+    const saved = JSON.parse(sessionStorage.getItem("stw-q") || "null");
+    if (saved) { queue = saved.q || []; loopQueue = !!saved.l; }
+  } catch (e) {}
+  function saveQueue() { try { sessionStorage.setItem("stw-q", JSON.stringify({ q: queue, l: loopQueue })); } catch (e) {} }
+  let lastIdx = -1, lastWinner = null, usedQueue = false;
+  let muted = false, actx = null;
+  const history = [];
+
+  // ---------- names ----------
+  function store(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  function fetchStore(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+
+  function parse() {
+    names = ta.value.split("\n").map(s => s.trim()).filter(Boolean).slice(0, 80);
+    $("count").textContent = names.length + (names.length === 1 ? " name" : " names");
+    $("spinBtn").disabled = names.length < 2;
+    store("stw-names", ta.value);
+  }
+  ta.value = fetchStore("stw-names") ?? SAMPLE.join("\n");
+  ta.addEventListener("input", parse);
+  parse();
+
+  $("shuffle").onclick = () => {
+    const a = names.slice();
+    for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+    ta.value = a.join("\n"); parse();
+  };
+  $("sort").onclick = () => { ta.value = names.slice().sort((a, b) => a.localeCompare(b)).join("\n"); parse(); };
+  $("mute").onclick = e => { muted = !muted; e.target.textContent = muted ? "Sound off" : "Sound on"; };
+
+  // ---------- drawing ----------
+  function size() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const w = Math.round(canvas.clientWidth * dpr);
+    if (w && canvas.width !== w) { canvas.width = w; canvas.height = w; }
+  }
+  new ResizeObserver(size).observe(canvas);
+  size();
+
+  function fitText(str, maxW) {
+    if (ctx.measureText(str).width <= maxW) return str;
+    let s = str;
+    while (s.length > 1 && ctx.measureText(s + "…").width > maxW) s = s.slice(0, -1);
+    return s + "…";
+  }
+
+  function segColor(i, n) {
+    let c = i % SEGS.length;
+    if (n > 1 && i === n - 1 && c === 0) c = 2; // avoid two matching neighbours
+    return SEGS[c];
+  }
+
+  function indexAt(r, n) {
+    const seg = TAU / n;
+    const th = ((-Math.PI / 2 - r) % TAU + TAU) % TAU;
+    return Math.floor(th / seg) % n;
+  }
+
+  function draw(time) {
+    const W = canvas.width; if (!W) return;
+    const cx = W / 2, cy = W / 2, R = W * 0.415;
+    ctx.clearRect(0, 0, W, W);
+
+    // rim
+    ctx.beginPath(); ctx.arc(cx, cy, R + W * 0.05, 0, TAU);
+    ctx.fillStyle = "#b8322a"; ctx.fill();
+    ctx.beginPath(); ctx.arc(cx, cy, R + W * 0.05, 0, TAU);
+    ctx.lineWidth = W * 0.008; ctx.strokeStyle = "#f2b632"; ctx.stroke();
+
+    // bulbs
+    const bulbs = 28;
+    const phase = reduce ? 0 : Math.floor(time / (spinning ? 90 : 450));
+    for (let b = 0; b < bulbs; b++) {
+      const a = (b / bulbs) * TAU;
+      const lit = reduce || (b + phase) % 2 === 0;
+      const x = cx + Math.cos(a) * (R + W * 0.026), y = cy + Math.sin(a) * (R + W * 0.026);
+      ctx.beginPath(); ctx.arc(x, y, W * 0.009, 0, TAU);
+      ctx.fillStyle = lit ? "#fff4c9" : "#7a2a24";
+      if (lit) { ctx.shadowColor = "#ffd76a"; ctx.shadowBlur = W * 0.02; }
+      ctx.fill(); ctx.shadowBlur = 0;
+    }
+
+    // segments
+    const n = names.length;
+    ctx.save(); ctx.translate(cx, cy); ctx.rotate(rot);
+    if (n === 0) {
+      ctx.beginPath(); ctx.arc(0, 0, R, 0, TAU); ctx.fillStyle = "#18246a"; ctx.fill();
+      ctx.fillStyle = "#a8b1e2"; ctx.font = `500 ${W * 0.035}px Rubik, sans-serif`;
+      ctx.textAlign = "center"; ctx.rotate(-rot); ctx.fillText("Add some names", 0, W * 0.12);
+    } else {
+      const seg = TAU / n;
+      const fs = Math.max(W * 0.02, Math.min(W * 0.042, seg * R * 0.42));
+      ctx.font = `700 ${fs}px Rubik, system-ui, sans-serif`;
+      ctx.textBaseline = "middle"; ctx.textAlign = "right";
+      for (let i = 0; i < n; i++) {
+        const c = segColor(i, n);
+        ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, R, i * seg, (i + 1) * seg); ctx.closePath();
+        ctx.fillStyle = c.bg; ctx.fill();
+        ctx.lineWidth = W * 0.003; ctx.strokeStyle = "rgba(15,24,80,.45)"; ctx.stroke();
+        ctx.save(); ctx.rotate((i + 0.5) * seg);
+        ctx.fillStyle = c.fg;
+        ctx.fillText(fitText(names[i], R * 0.68), R - W * 0.03, 0);
+        ctx.restore();
+      }
+    }
+    ctx.restore();
+
+    // hub
+    ctx.beginPath(); ctx.arc(cx, cy, W * 0.075, 0, TAU);
+    ctx.fillStyle = "#f2b632"; ctx.fill();
+    ctx.lineWidth = W * 0.008; ctx.strokeStyle = "#b8322a"; ctx.stroke();
+    ctx.fillStyle = "#121c55"; ctx.font = `${W * 0.03}px Bungee, Impact, sans-serif`;
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText("SPIN", cx, cy + W * 0.002);
+
+    // pointer
+    ctx.save();
+    ctx.translate(cx, cy - R - W * 0.055);
+    ctx.rotate(-kick * 0.35);
+    ctx.beginPath();
+    ctx.moveTo(-W * 0.034, 0); ctx.lineTo(W * 0.034, 0); ctx.lineTo(0, W * 0.085); ctx.closePath();
+    ctx.fillStyle = "#f7efdc"; ctx.shadowColor = "rgba(0,0,0,.4)"; ctx.shadowBlur = W * 0.012; ctx.fill();
+    ctx.shadowBlur = 0; ctx.lineWidth = W * 0.006; ctx.strokeStyle = "#121c55"; ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, W * 0.012, W * 0.012, 0, TAU); ctx.fillStyle = "#e2463b"; ctx.fill();
+    ctx.restore();
+  }
+
+  function loop(t) {
+    kick *= 0.82;
+    draw(t);
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  // ---------- sound ----------
+  function audio() {
+    if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+    if (actx && actx.state === "suspended") actx.resume();
+  }
+  function tone(freq, start, dur, vol, type) {
+    if (!actx || muted) return;
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = type || "square"; o.frequency.value = freq;
+    g.gain.setValueAtTime(vol, start);
+    g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+    o.connect(g); g.connect(actx.destination);
+    o.start(start); o.stop(start + dur + 0.02);
+  }
+  const tick = () => actx && tone(1700, actx.currentTime, 0.03, 0.04);
+  function fanfare() {
+    if (!actx) return;
+    const t = actx.currentTime;
+    [523, 659, 784, 1047].forEach((f, i) => tone(f, t + i * 0.11, i === 3 ? 0.5 : 0.14, 0.07, "triangle"));
+  }
+
+  // ---------- spin ----------
+  function spin() {
+    if (spinning || names.length < 2) return;
+    closeOverlays();
+    audio();
+    const n = names.length, seg = TAU / n;
+    let idx;
+    // drop queued names that are no longer on the wheel
+    while (queue.length && !names.includes(queue[0])) queue.shift();
+    const rigTarget = queue[0];
+    if (rigTarget) {
+      const matches = names.map((v, i) => v === rigTarget ? i : -1).filter(i => i >= 0);
+      idx = matches[Math.floor(Math.random() * matches.length)];
+    } else {
+      idx = Math.floor(Math.random() * n);
+    }
+    usedQueue = !!rigTarget;
+    const f = 0.12 + Math.random() * 0.76; // land somewhere natural inside the slice
+    let target = -Math.PI / 2 - (idx + f) * seg;
+    const extra = (reduce ? 2 : 5 + Math.floor(Math.random() * 3)) * TAU;
+    target += Math.ceil((rot + extra - target) / TAU) * TAU;
+
+    const start = rot, delta = target - start;
+    const dur = reduce ? 1800 : 5200 + Math.random() * 1400;
+    const t0 = performance.now();
+    spinning = true; $("spinBtn").disabled = true;
+    lastIdx = indexAt(rot, n);
+
+    function step(now) {
+      const p = Math.min(1, (now - t0) / dur);
+      const e = 1 - Math.pow(1 - p, 4);
+      rot = start + delta * e;
+      const i = indexAt(rot, n);
+      if (i !== lastIdx) { lastIdx = i; kick = 1; tick(); }
+      if (p < 1) requestAnimationFrame(step);
+      else finish(idx);
+    }
+    requestAnimationFrame(step);
+  }
+
+  function finish(idx) {
+    rot = ((rot % TAU) + TAU) % TAU;
+    spinning = false; $("spinBtn").disabled = names.length < 2;
+    lastWinner = names[idx];
+    if (usedQueue && queue.length) {
+      const done = queue.shift();
+      if (loopQueue) queue.push(done);
+      saveQueue();
+    }
+    history.unshift(lastWinner); history.length = Math.min(history.length, 8);
+    renderHistory();
+    $("winName").textContent = lastWinner;
+    $("remove").textContent = "Remove " + (lastWinner.length > 14 ? "winner" : lastWinner);
+    $("resultOv").hidden = false;
+    $("again").focus();
+    fanfare();
+    confetti();
+  }
+
+  function renderHistory() {
+    const ol = $("hist");
+    ol.innerHTML = "";
+    history.forEach(h => { const li = document.createElement("li"); li.textContent = h; ol.appendChild(li); });
+    ol.hidden = history.length === 0; $("histEmpty").hidden = history.length > 0;
+  }
+
+  $("spinBtn").onclick = spin;
+  canvas.addEventListener("click", spin);
+  $("again").onclick = spin;
+  $("closeRes").onclick = () => { $("resultOv").hidden = true; };
+  $("remove").onclick = () => {
+    const i = names.indexOf(lastWinner);
+    if (i >= 0) { names.splice(i, 1); ta.value = names.join("\n"); parse(); }
+    $("resultOv").hidden = true;
+  };
+
+  // ---------- the secret bit ----------
+  // Nothing on the main page changes when an order is set; the only place it shows is this hidden panel.
+  function renderRig() {
+    const ql = $("queue"); ql.innerHTML = "";
+    queue.forEach((nm, i) => {
+      const li = document.createElement("li");
+      const n = document.createElement("span"); n.className = "n"; n.textContent = i + 1;
+      const t = document.createElement("span"); t.className = "nm"; t.textContent = nm;
+      const x = document.createElement("button");
+      x.type = "button"; x.className = "x"; x.textContent = "×";
+      x.setAttribute("aria-label", "Remove " + nm + " from position " + (i + 1));
+      x.onclick = () => { queue.splice(i, 1); saveQueue(); renderRig(); };
+      li.append(n, t, x); ql.appendChild(li);
+    });
+    ql.hidden = queue.length === 0;
+    $("queueEmpty").hidden = queue.length > 0;
+
+    const chips = $("chips"); chips.innerHTML = "";
+    [...new Set(names)].forEach(nm => {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "chip"; b.textContent = nm;
+      b.onclick = () => { queue.push(nm); saveQueue(); renderRig(); ql.lastElementChild?.scrollIntoView({ block: "nearest" }); };
+      chips.appendChild(b);
+    });
+    $("loop").checked = loopQueue;
+  }
+  function openRig() {
+    if (spinning) return;
+    $("resultOv").hidden = true;
+    renderRig();
+    $("rigOv").hidden = false;
+  }
+  $("loop").onchange = e => { loopQueue = e.target.checked; saveQueue(); };
+  $("rigClear").onclick = () => { queue = []; saveQueue(); renderRig(); };
+  $("rigDone").onclick = () => { $("rigOv").hidden = true; };
+
+  // open: press and hold the title, triple-click it, or press R
+  const title = $("title");
+  let holdTimer = null;
+  title.addEventListener("pointerdown", () => { holdTimer = setTimeout(openRig, 650); });
+  ["pointerup", "pointerleave", "pointercancel"].forEach(ev => title.addEventListener(ev, () => clearTimeout(holdTimer)));
+  title.addEventListener("click", e => { if (e.detail === 3) openRig(); });
+  title.addEventListener("contextmenu", e => e.preventDefault());
+  document.addEventListener("keydown", e => {
+    const typing = e.target === ta;
+    if (e.key === "Escape") closeOverlays();
+    if (!typing && (e.key === "r" || e.key === "R") && !e.metaKey && !e.ctrlKey) openRig();
+    if (!typing && e.key === " " && $("resultOv").hidden && $("rigOv").hidden && document.activeElement.tagName !== "BUTTON") { e.preventDefault(); spin(); }
+  });
+
+  function closeOverlays() { $("resultOv").hidden = true; $("rigOv").hidden = true; }
+  [$("resultOv"), $("rigOv")].forEach(ov => ov.addEventListener("click", e => { if (e.target === ov) ov.hidden = true; }));
+
+  // ---------- confetti ----------
+  const cf = $("confetti"), cctx = cf.getContext("2d");
+  function confetti() {
+    if (reduce) return;
+    cf.hidden = false;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    cf.width = innerWidth * dpr; cf.height = innerHeight * dpr;
+    const cols = SEGS.map(s => s.bg);
+    const parts = Array.from({ length: 160 }, () => ({
+      x: cf.width / 2 + (Math.random() - .5) * cf.width * .3,
+      y: cf.height * .45,
+      vx: (Math.random() - .5) * 22 * dpr,
+      vy: (-Math.random() * 20 - 8) * dpr,
+      s: (5 + Math.random() * 6) * dpr,
+      r: Math.random() * TAU, vr: (Math.random() - .5) * .4,
+      c: cols[Math.floor(Math.random() * cols.length)]
+    }));
+    const t0 = performance.now();
+    (function frame(now) {
+      cctx.clearRect(0, 0, cf.width, cf.height);
+      parts.forEach(p => {
+        p.vy += 0.6 * dpr; p.vx *= 0.99; p.x += p.vx; p.y += p.vy; p.r += p.vr;
+        cctx.save(); cctx.translate(p.x, p.y); cctx.rotate(p.r);
+        cctx.fillStyle = p.c; cctx.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2);
+        cctx.restore();
+      });
+      if (now - t0 < 3200) requestAnimationFrame(frame);
+      else { cctx.clearRect(0, 0, cf.width, cf.height); cf.hidden = true; }
+    })(t0);
+  }
+})();
+</script>
+</body>
+</html>
